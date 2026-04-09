@@ -200,8 +200,7 @@ for smi in smiles_list:
         useFeatures=False, useChirality=True, useBondTypes=True
     )
     fp_str = fp.ToBitString()
-    
-    # 直接转换为整数列表
+
     fp_int_list = [int(i) for i in fp_str]
     
     fingerprints.append(fp_int_list)
@@ -312,7 +311,6 @@ class MLPRegressor(nn.Module):
  
         self.fp_projection = nn.Linear(fp_dim, 512)       
         self.vec_projection = nn.Linear(vec_dim, 512)     
-        #self.adduct_projection = nn.Linear(adduct_dim, 512)  # 1 -> 512
         self.relu = nn.ReLU()
 
         self.regressor = nn.Sequential(
@@ -334,7 +332,6 @@ class MLPRegressor(nn.Module):
         vec_proj = self.vec_projection(vec)    
         vec_proj = self.relu(vec_proj)
     
- 
         combined = torch.cat([addt, dof, vec_proj, fp_proj], dim=1)  
  
         output = self.regressor(combined)  
@@ -343,20 +340,6 @@ class MLPRegressor(nn.Module):
  
 model = MLPRegressor().to(device)
 
-criterion = nn.HuberLoss()
-optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.01)
-
-scheduler = optim.lr_scheduler.ReduceLROnPlateau(
-    optimizer, mode='min', factor=0.1, patience=10
-)
-
-max_iter = 500
-best_loss = float('inf')
-patience = 20
-counter = 0
-best_model_state = None
-
-#checkpoint = torch.load('/home/yaping/projects/regre/shap/mlp2.pth')
 checkpoint = torch.load("/home/yaping/projects/regre/shap/mlp2_15estp.pth")
 model.load_state_dict(checkpoint['model_state_dict'])
 
@@ -377,35 +360,18 @@ rmse = np.sqrt(mse)
 mae = mean_absolute_error(test_targets, test_preds)
 r2 = r2_score(test_targets, test_preds) 
 median_ae = median_absolute_error(test_targets, test_preds)
-relative_errors = np.abs(test_targets - test_preds) / np.abs(test_targets)
-#relative_errors =  (test_targets - test_preds) / (test_targets)
-
-median_re = np.median(relative_errors)
-
-mean_error = np.mean(np.abs(test_targets - test_preds))  
-std_error = np.std(relative_errors )     
+    
 
 print(f"Test Metrics:")
 print(f"MSE: {mse:.4f}")
 print(f"RMSE: {rmse:.4f}")
 print(f"MAE: {mae:.4f}")
 print(f"R²: {r2:.4f}")
-print(f"Median Absolute Error: {median_ae:.4f}")
-print(f"Median Relative Error: {median_re:.4f}") 
-print(f"Mean Error: {mean_error:.4f}")           
-print(f"Standard Deviation of Error: {std_error:.4f}")   
+print(f"Median Absolute Error: {median_ae:.4f}")  
 
 results = pd.DataFrame({
-    "preds": test_preds,
-    "targets": test_targets
+    "preds_CCS": test_preds,
+    "target_CCS": test_targets
     })
 
-#results.to_csv("/home/yaping/projects/regre/pollut/polysacharide2.csv", index=False)
-#results.to_csv("/home/yaping/projects/regre/drugs/ac7b01709_si_003_2_results2.csv", index=False)
-#results.to_csv("/home/yaping/projects/regre/peptides/filter_results.csv", index=False)
-#results.to_csv("/home/yaping/projects/regre/lipids/lipids_likeLipids_results.csv", index=False)
-#results.to_csv("/home/yaping/projects/regre/omp/es0c05713_si_002_2_results.csv", index=False)
-
-
-#/home/yaping/projects/regre/lipids/UnifiedCCSCompendium_lipids_likeLipids.csv
-
+results.to_csv("./UEFCCS_prediction_results.csv", index=False)
