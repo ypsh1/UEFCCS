@@ -38,7 +38,7 @@ def main():
 
 if __name__ == "__main__":
     
-    device = torch.device("cuda:1")
+    device = torch.device("cuda:1") #according to your devices
     print(f"Using device: {device}")
 
     torch.manual_seed(42)
