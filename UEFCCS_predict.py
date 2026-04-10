@@ -27,7 +27,7 @@ def main():
 
     #load pretrained model
     model = MLPRegressor().to(device)
-    checkpoint = torch.load("./weights4predict", map_location=device)
+    checkpoint = torch.load("./weights4predict.pth", map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     test_preds, test_targets, metrics = predict_and_evaluate(model, test_loader, device)
