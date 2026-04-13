@@ -1,5 +1,5 @@
 # UEFCCS
-UEFCCS was developed for CCS prediction
+UEFCCS was developed for collision cross section (CCS) prediction
 
 ## Setting up Conda environment
 
