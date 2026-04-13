@@ -4,8 +4,8 @@ import torch
 from torch.utils.data import DataLoader
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.warning')
-
-from prepare import prepare_features, MultiFeatureDataset, MLPRegressor,predict_and_evaluate
+from uefccs import features
+from features import prepare_features, MultiFeatureDataset, MLPRegressor,predict_and_evaluate
 
 def main():
 
