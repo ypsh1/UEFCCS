@@ -6,10 +6,8 @@ import torch.optim as optim
 from torch.utils.data import DataLoader
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, median_absolute_error
-import sys
-sys.path.append("/home/yaping/projects/regre/shap/smiles_2_ccs/")
-
-from prepare import prepare_features4train, MultiFeatureDataset, MLPRegressor
+from uefccs import features
+from features import prepare_features4train, MultiFeatureDataset, MLPRegressor
 
 def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
     # 设置设备
