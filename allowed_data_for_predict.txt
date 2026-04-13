@@ -4,7 +4,7 @@ CCCO,[M+H],C3H8O,123
 CCCO,[M-H],C3H8O,123
 CCCO,[M+Na],C3H8O,123
 
-#or only the following Columns are accepted
+#or only the following columns are also accepted
 smiles,Adduct
 CCCO,[M+H]
 CCCO,[M-H]
