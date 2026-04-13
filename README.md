@@ -9,8 +9,13 @@ Create new Conda environment using environment.yml.
     conda activate uefccs
 
 ## Running evaluation
-it will run deafult data, please choose your data in the line 
+once uefccs is correctly installed, please load the weights “”
 
+    pip show uefccs
+
+copy the weights “ckpt.pt” replace the /envs/unim/lib/python3.10/site-packages/unimol_tools/weights/mol_pre_all_h_220816.pt
+
+    
     python UEFCCS_predict.py
     
 ## reproduce  
