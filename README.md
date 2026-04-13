@@ -1,7 +1,7 @@
 # UEFCCS
 UEFCCS was developed for CCS prediction
 
-Setting up Conda environment
+##Setting up Conda environment
 
 Create new Conda environment using environment.yml.  
 
@@ -10,6 +10,7 @@ Create new Conda environment using environment.yml.
 
 ## Running evaluation
 it will run deafult data, please choose your data in the line 
+
     python UEFCCS_predict.py
     
 ## reproduce  
