@@ -5,5 +5,5 @@ Setting up Conda environment
 
 Create new Conda environment using environment.yml.  
 
-conda env create -f environment.yml
-conda activate uefccs
+    conda env create -f environment.yml
+    conda activate uefccs
