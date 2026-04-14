@@ -15,7 +15,7 @@ Once uefccs is correctly installed, please check the location of uefccs
 
 copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
     
-    python UEFCCS_predict.py
+    python UEFCCS_predict.py --input_csv /test.csv --output_csv /predicts.csv
     
 ## reproduce  
 
