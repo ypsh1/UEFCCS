@@ -3,7 +3,6 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from uefccs import features
 from features import prepare_features, MultiFeatureDataset, MLPRegressor, predict_and_evaluate
 
 def main(csv_path, results_csv_path, device, batch_size=128):
