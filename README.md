@@ -10,7 +10,7 @@ Create new Conda environment using environment.yml.
     conda env create -f environment.yml
     conda activate uefccs
 
-## git clone repository
+## Git clone repository
 
     git clone https://github.com/ypsh1/UEFCCS.git
     cd uefccs
@@ -24,7 +24,7 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
     
     python UEFCCS_predict.py --input_csv /test.csv --output_csv /predicts.csv
     
-## reproduce  
+## Reproduce  
 
 please  refer UEFCCS architecture
 1. to get the [CLS] token using 
