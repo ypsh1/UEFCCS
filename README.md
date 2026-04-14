@@ -1,6 +1,8 @@
 # UEFCCS
 UEFCCS was developed for collision cross section (CCS) prediction
 
+![Logo](./images/logo.png)
+
 ## Setting up Conda environment
 
 Create new Conda environment using environment.yml.  
