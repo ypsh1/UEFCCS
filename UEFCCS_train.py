@@ -10,19 +10,14 @@ from uefccs import features
 from features import prepare_features4train, MultiFeatureDataset, MLPRegressor
 
 def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
-    # 设置设备
     device = torch.device(device)
-    #print(f"Using device: {device}")
- 
-    # 读取数据
-    df_all = pd.read_csv(csv_path)
-    # 确保必要的列存在
+    
+    df = pd.read_csv(csv_path)
     required_cols = ['smiles', 'Adduct', 'CCS_AVG', 'Molecular Formula']
     for col in required_cols:
         if col not in df_all.columns:
             raise KeyError(f"Column '{col}' not found in CSV")
 
-    # 划分训练/验证/测试集
     train_val, test = train_test_split(df_all, test_size=0.2, random_state=42, shuffle=True)
     train, val = train_test_split(train_val, test_size=0.1, random_state=42, shuffle=True)
 
@@ -30,15 +25,12 @@ def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
     val_indices   = list(val.index)
     test_indices  = list(test.index)
 
-    # 定义元素列表
     elements = ["H", "Li", "B", "C", "N", "O", "F", "Na", "Si", "P", "S", "Cl", "K", "Se", "Br", "I"]
 
-    # 提取全部特征（在全体数据上）
     ion_repr, fp_features, vec_features, adduct_features, y = prepare_features4train(
-        df_all, elements, device, unirepr_checkpoint
+        df, elements, device, unirepr_checkpoint
     )
 
-    # 创建 Dataset 和 DataLoader
     train_dataset = MultiFeatureDataset(train_indices, ion_repr, fp_features, vec_features, adduct_features, y)
     val_dataset   = MultiFeatureDataset(val_indices,   ion_repr, fp_features, vec_features, adduct_features, y)
     test_dataset  = MultiFeatureDataset(test_indices,  ion_repr, fp_features, vec_features, adduct_features, y)
@@ -53,7 +45,6 @@ def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
     optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay=0.01)
     scheduler = optim.lr_scheduler.ReduceLROnPlateau(optimizer, mode='min', factor=0.1, patience=10)
 
-    # 训练循环
     max_iter = 500
     best_loss = float('inf')
     patience = 15
@@ -95,10 +86,8 @@ def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
         if epoch % 200 == 0:
             print(f'Epoch {epoch}, Train Loss: {train_loss/len(train_loader):.4f}, Val Loss: {val_loss:.4f}')
 
-    # 加载最佳模型
     model.load_state_dict(best_model_state)
 
-    # 保存模型
     torch.save({
         'epoch': epoch,
         'model_state_dict': best_model_state,
@@ -106,7 +95,6 @@ def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
         'loss': best_loss,
     }, checkpoint_save_path)
 
-    # 测试评估
     model.eval()
     test_preds = []
     test_targets = []
@@ -134,9 +122,8 @@ def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
     print(f"Median Absolute Error: {median_ae:.4f}")
     print(f"Median Relative Error: {median_re:.4f}")
 
-    # 保存预测结果
     results = pd.DataFrame({"preds": test_preds, "targets": test_targets})
-    # results.to_csv("./results.csv", index=False)   # 按需取消注释
+    # results.to_csv("./results.csv", index=False)   
     return model, results
 
 if __name__ == "__main__":
@@ -150,6 +137,6 @@ if __name__ == "__main__":
     main(
         csv_path="/home/yaping/projects/regre/shap/smiles_2_ccs/mlp5.csv",
         checkpoint_save_path="/home/yaping/projects/regre/shap/smiles_2_ccs/train.pth",
-        unirepr_checkpoint="/home/yaping/projects/regre/shap/smiles_2_ccs/check3.pt",   # 如果已有预计算表征则提供，否则设为 None 动态计算
+        unirepr_checkpoint="/home/yaping/projects/regre/shap/smiles_2_ccs/check3.pt",  
         device=device
     )
