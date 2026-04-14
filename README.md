@@ -9,12 +9,11 @@ Create new Conda environment using environment.yml.
     conda activate uefccs
 
 ## Running evaluation
-once uefccs is correctly installed, please load the weights “”
+Once uefccs is correctly installed, please check the location of uefccs
 
     pip show uefccs
 
-copy the weights “ckpt.pt” replace the /envs/unim/lib/python3.10/site-packages/unimol_tools/weights/mol_pre_all_h_220816.pt
-
+copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
     
     python UEFCCS_predict.py
     
