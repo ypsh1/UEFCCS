@@ -135,8 +135,8 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(42)
  
     main(
-        csv_path="/home/yaping/projects/regre/shap/smiles_2_ccs/mlp5.csv",
-        checkpoint_save_path="/home/yaping/projects/regre/shap/smiles_2_ccs/train.pth",
-        unirepr_checkpoint="/home/yaping/projects/regre/shap/smiles_2_ccs/check3.pt",  
+        csv_path="./data/METLIN.csv",
+        checkpoint_save_path="./train.pth",
+        unirepr_checkpoint="./CLS_repr.pt",  
         device=device
     )
