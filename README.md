@@ -8,6 +8,11 @@ Create new Conda environment using environment.yml.
     conda env create -f environment.yml
     conda activate uefccs
 
+## git clone repository
+
+    git clone https://github.com/ypsh1/UEFCCS.git
+    cd uefccs
+    
 ## Running evaluation
 Once uefccs is correctly installed, please check the location of uefccs
 
