@@ -7,7 +7,7 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 import re
-from unimol_tools_edt014post1 import UniMolRepr
+from unimol_tools import UniMolRepr
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.warning')
 
