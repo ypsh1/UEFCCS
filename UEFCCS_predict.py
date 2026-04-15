@@ -23,7 +23,7 @@ def main(csv_path, results_csv_path, device, batch_size=128):
 
     # Load pretrained model
     model = MLPRegressor().to(device)
-    checkpoint = torch.load("./ckpt/weights.pth", map_location=device)
+    checkpoint = torch.load("./ckpt/predict.pth", map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     # Predict and evaluate
