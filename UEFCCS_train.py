@@ -8,7 +8,7 @@ from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, median_absolute_error
 from features import prepare_features4train, MultiFeatureDataset, MLPRegressor
 
-def main(csv_path, checkpoint_save_path, unirepr_checkpoint=None, device=None):
+def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
     device = torch.device(device)
     
     df = pd.read_csv(csv_path)
@@ -134,8 +134,8 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(42)
  
     main(
-        csv_path="./data/METLIN.csv",
+        csv_path="./data/METLIN_CCS_monomer.csv",
         checkpoint_save_path="./train.pth",
-        unirepr_checkpoint="./CLS_repr.pt",  
+        cls_checkpoint="./data/CLS_repr.pt",  
         device=device
     )
