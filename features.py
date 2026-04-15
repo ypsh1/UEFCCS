@@ -62,34 +62,6 @@ def get_adjust_from_adduct(adduct):
     else:
         return {}
 
-class MLPRegressor(nn.Module):
-    def __init__(self, ion_dim=513, fp_dim=2048, fe_dim=16, hidden_dim=512, output_dim=1):
-        super(MLPRegressor, self).__init__()
-        self.fp_projection = nn.Linear(fp_dim, hidden_dim)
-        self.vec_projection = nn.Linear(fe_dim, hidden_dim)
-        self.relu = nn.ReLU()
-        self.regressor = nn.Sequential(
-            nn.Linear(ion_dim + hidden_dim + hidden_dim, hidden_dim),  
-            nn.ReLU(),
-            nn.Dropout(0.003),
-            nn.Linear(512, 256),
-            nn.ReLU(),
-            nn.Dropout(0.001),
-            nn.Linear(256, 128),
-            nn.ReLU(),
-            nn.Linear(128, output_dim)
-        )
-
-    def forward(self, ion, fp, fe, addt):
-        fp_proj = self.fp_projection(fp)
-        fp_proj = self.relu(fp_proj)
-        fe_proj = self.vec_projection(fe)
-        fe_proj = self.relu(fe_proj)
-        combined = torch.cat([addt, ion, fe_proj, fp_proj], dim=1)  
-        output = self.regressor(combined)
-        return output
-
-
 class MultiFeatureDataset:
     def __init__(self, indices, ion_repr, fp_features, fe_features, adduct_features, y):
         self.indices = indices
@@ -181,6 +153,33 @@ def prepare_features(csv_path, device):
     y = torch.FloatTensor(np.array(targets)).to(device)        # (N,)
 
     return ion_repr, fp_features, fe_features, adduct_features, y
+
+class MLPRegressor(nn.Module):
+    def __init__(self, ion_dim=513, fp_dim=2048, fe_dim=16, hidden_dim=512, output_dim=1):
+        super(MLPRegressor, self).__init__()
+        self.fp_projection = nn.Linear(fp_dim, hidden_dim)
+        self.vec_projection = nn.Linear(fe_dim, hidden_dim)
+        self.relu = nn.ReLU()
+        self.regressor = nn.Sequential(
+            nn.Linear(ion_dim + hidden_dim + hidden_dim, hidden_dim),  
+            nn.ReLU(),
+            nn.Dropout(0.003),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Dropout(0.001),
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, output_dim)
+        )
+
+    def forward(self, ion, fp, fe, addt):
+        fp_proj = self.fp_projection(fp)
+        fp_proj = self.relu(fp_proj)
+        fe_proj = self.vec_projection(fe)
+        fe_proj = self.relu(fe_proj)
+        combined = torch.cat([addt, ion, fe_proj, fp_proj], dim=1)  
+        output = self.regressor(combined)
+        return output
 
 def predict_and_evaluate(model, test_loader, device, csv_path):
     """对测试集进行预测并计算评估指标，返回 (test_preds, test_targets, metrics_dict)
