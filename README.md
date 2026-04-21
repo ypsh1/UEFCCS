@@ -1,6 +1,8 @@
 # UEFCCS
 UEFCCS was developed for collision cross section (CCS) prediction
 
+written in python 3.10, pytorch 2.9, cuda 12.8
+
 <img src="./images/TOC.png" alt="Logo" width="500">
 
 ## Setting up Conda environment
