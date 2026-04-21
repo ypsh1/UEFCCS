@@ -28,12 +28,16 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
 
 please  refer UEFCCS architecture
 1. finetune
+
    python ./data_prepare/finetune.py
 
 2. generating the [CLS] token
-   pythoon ./data_prepare/get_cls_token.py
 
-3. python UEFCCS_train.py
+    pythoon ./data_prepare/get_cls_token.py
+
+3. training
+
+   python UEFCCS_train.py
 
 ## Citation
 
