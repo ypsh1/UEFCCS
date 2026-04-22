@@ -20,7 +20,7 @@ Create new Conda environment using environment.yml.
 ## 🚀Running evaluation
 Once uefccs is correctly installed, please check the location of uefccs
 
-    pip show uefccs
+    pip show unimol_tools
 
 copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
     
