@@ -17,7 +17,7 @@ Create new Conda environment using environment.yml.
     git clone https://github.com/ypsh1/UEFCCS.git
     cd uefccs
     
-## Running evaluation
+## 🚀Running evaluation
 Once uefccs is correctly installed, please check the location of uefccs
 
     pip show uefccs
