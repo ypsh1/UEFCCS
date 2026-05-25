@@ -1,9 +1,9 @@
-# 🔍UEFCCS
+# 🔍 UEFCCS
 UEFCCS was developed for collision cross section (CCS) prediction
 
 <img src="./images/ToC_.png" alt="Logo" width="600">
 
-## 📦Setting up Conda environment
+## 📦 Setting up Conda environment
 
 UEFCCS was written in python (3.10) and used pytorch (2.9.1) with CUDA (12.8). 
 
@@ -12,12 +12,12 @@ Create new Conda environment using environment.yml.
     conda env create -f environment.yml
     conda activate uefccs
 
-## 📁Git clone repository
+## 📁 Git clone repository
 
     git clone https://github.com/ypsh1/UEFCCS.git
     cd uefccs
     
-## 🚀Running evaluation
+## 🎯 Prediction
 Once uefccs is correctly installed, please check the location of uefccs
 
     pip show unimol_tools
@@ -26,7 +26,7 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
     
     python UEFCCS_predict.py --input_csv /test.csv --output_csv /predicts.csv
     
-## Reproduce  
+## ⚡Reproduction 
 
 please  refer UEFCCS architecture
 1. finetune
@@ -41,7 +41,7 @@ please  refer UEFCCS architecture
 
    python UEFCCS_train.py
 
-## 📖Citation
+## 📖 Citation
 
 If you use this code, please cite:
 
