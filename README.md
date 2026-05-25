@@ -38,8 +38,12 @@ please  refer UEFCCS architecture
     pythoon ./data_prepare/get_cls_token.py
 
 3. training
-
-   python UEFCCS_train.py
+ 
+   python UEFCCS_train.py --csv_path train.csv \
+                 --checkpoint_save_path ./train.pth \
+                 --results_path ./results.csv \
+                 --cls_tensor ./path_to_cls_token \
+                 --device cuda:0
 
 ## 📖 Citation
 
