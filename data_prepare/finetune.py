@@ -11,18 +11,14 @@ def canonicalize_smiles(smiles_list):
     
     return [canonicalize(smiles) for smiles in smiles_list]
 
-df = pd.read_csv('./METLIN_CCS_data.csv')
+df = pd.read_csv('./data/METLIN_CCS_monomer.csv')
 
 train, test = train_test_split(df, test_size=0.2, random_state=42, shuffle=True)
 
 train = train[train["Adduct"] == "[M+H]"]
 train_targets = train["CCS_AVG"]
 
-test = test[test["Adduct"] == "[M+H]"]
-test_targets = test["CCS_AVG"]
-
 train_smiles = canonicalize_smiles(train["smiles"].tolist())
-test_smiles = canonicalize_smiles(test["smiles"].tolist())
 
 X = list(train_smiles)
 y = list(train_targets)
@@ -45,13 +41,3 @@ clf = MolTrain(task='regression',
                )
     
 clf.fit(train_data)    
-pred = MolPredict(load_model=f'./funetune_checkpoints') 
-predicts = pred.predict(test_smiles)
-
-results = pd.DataFrame({
-    "preds": np.ravel(predicts),
-    "M+H_CCS": train_targets,
-    "smiles": test_smiles
-})
-
-#results.to_csv('./results_of_M+H.csv', index=False)
