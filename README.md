@@ -24,20 +24,22 @@ Once uefccs is correctly installed, please check the location of uefccs
 
 copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
     
-    python UEFCCS_predict.py --input_csv /test.csv --output_csv /predicts.csv
+    python UEFCCS_predict.py --input_csv test.csv --output_csv predicts.csv
     
 ## ⚡Reproduction 
 
 please  refer UEFCCS architecture
 1. finetune
 
-   python ./data_prepare/finetune.py
+   python ./data_prepare/finetune.py   #
 
 2. generating the [CLS] token
 
     python ./data_prepare/get_cls_token.py
 
 3. training
+
+   https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
  
    python UEFCCS_train.py --csv_path train.csv --checkpoint_save_path ./train.pth --results_path ./results.csv --cls_tensor ./path_to_cls_token --device cuda:0
    
