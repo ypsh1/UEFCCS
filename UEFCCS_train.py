@@ -4,20 +4,24 @@ import torch
 import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
+import argparse
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, median_absolute_error
+
 from features import prepare_features4train, MultiFeatureDataset, MLPRegressor
 
-def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
+def main(csv_path, checkpoint_save_path, results_path, cls_tensor=None, device=None):
+
     device = torch.device(device)
-    
-    df = pd.read_csv(csv_path)
+ 
+    df= pd.read_csv(csv_path)
+
     required_cols = ['smiles', 'Adduct', 'CCS_AVG', 'Molecular Formula']
     for col in required_cols:
-        if col not in df_all.columns:
+        if col not in df.columns:
             raise KeyError(f"Column '{col}' not found in CSV")
 
-    train_val, test = train_test_split(df_all, test_size=0.2, random_state=42, shuffle=True)
+    train_val, test = train_test_split(df, test_size=0.2, random_state=42, shuffle=True)
     train, val = train_test_split(train_val, test_size=0.1, random_state=42, shuffle=True)
 
     train_indices = list(train.index)
@@ -26,14 +30,14 @@ def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
 
     elements = ["H", "Li", "B", "C", "N", "O", "F", "Na", "Si", "P", "S", "Cl", "K", "Se", "Br", "I"]
 
-    ion_repr, fp_features, vec_features, adduct_features, y = prepare_features4train(
-        df, elements, device, unirepr_checkpoint
+    ion_repr, fp_features, fe_features, adduct_features, y = prepare_features4train(
+        df, elements, device, cls_tensor
     )
 
-    train_dataset = MultiFeatureDataset(train_indices, ion_repr, fp_features, vec_features, adduct_features, y)
-    val_dataset   = MultiFeatureDataset(val_indices,   ion_repr, fp_features, vec_features, adduct_features, y)
-    test_dataset  = MultiFeatureDataset(test_indices,  ion_repr, fp_features, vec_features, adduct_features, y)
-
+    train_dataset = MultiFeatureDataset(train_indices, ion_repr, fp_features, fe_features, adduct_features, y)
+    val_dataset   = MultiFeatureDataset(val_indices,   ion_repr, fp_features, fe_features, adduct_features, y)
+    test_dataset  = MultiFeatureDataset(test_indices,  ion_repr, fp_features, fe_features, adduct_features, y)
+    
     batch_size = 128
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
     val_loader   = DataLoader(val_dataset,   batch_size=batch_size)
@@ -53,9 +57,9 @@ def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
     for epoch in range(max_iter):
         model.train()
         train_loss = 0.0
-        for batch_dof, batch_fp, batch_vec, batch_adduct, batch_y in train_loader:
+        for batch_dof, batch_fp, batch_fe, batch_adduct, batch_y in train_loader:
             optimizer.zero_grad()
-            outputs = model(batch_dof, batch_fp, batch_vec, batch_adduct)
+            outputs = model(batch_dof, batch_fp, batch_fe, batch_adduct)
             loss = criterion(outputs.squeeze(), batch_y)
             loss.backward()
             optimizer.step()
@@ -64,8 +68,8 @@ def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
         model.eval()
         val_loss = 0.0
         with torch.no_grad():
-            for batch_dof, batch_fp, batch_vec, batch_adduct, batch_y in val_loader:
-                outputs = model(batch_dof, batch_fp, batch_vec, batch_adduct)
+            for batch_dof, batch_fp, batch_fe, batch_adduct, batch_y in val_loader:
+                outputs = model(batch_dof, batch_fp, batch_fe, batch_adduct)
                 val_loss += criterion(outputs.squeeze(), batch_y).item()
         val_loss /= len(val_loader)
 
@@ -98,14 +102,13 @@ def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
     test_preds = []
     test_targets = []
     with torch.no_grad():
-        for batch_dof, batch_fp, batch_vec, batch_addt, batch_y in test_loader:
-            outputs = model(batch_dof, batch_fp, batch_vec, batch_addt)
+        for batch_dof, batch_fp, batch_fe, batch_addt, batch_y in test_loader:
+            outputs = model(batch_dof, batch_fp, batch_fe, batch_addt)
             test_preds.extend(outputs.squeeze().cpu().numpy())
             test_targets.extend(batch_y.cpu().numpy())
 
     test_targets = np.array(test_targets)
     test_preds = np.array(test_preds)
-    test_preds = np.round(test_preds, 2)
 
     mse = mean_squared_error(test_targets, test_preds)
     mae = mean_absolute_error(test_targets, test_preds)
@@ -122,20 +125,37 @@ def main(csv_path, checkpoint_save_path, cls_checkpoint=None, device=None):
     print(f"Median Relative Error: {median_re:.4f}")
 
     results = pd.DataFrame({"preds": test_preds, "targets": test_targets})
-    # results.to_csv("./results.csv", index=False)   
-    return model, results
+    results.to_csv(results_path, index=False)   
 
 if __name__ == "__main__":
-    
-    device = torch.device("cuda:0")  # according to your device
+    parser = argparse.ArgumentParser(description="Train/evaluate model with CCS data")
+    parser.add_argument("--csv_path", type=str,
+                        default="/home/projects/regre/shap/smiles_2_ccs/mlp5.csv",
+                        help="Path to the CSV file with SMILES and CCS values")
+    parser.add_argument("--checkpoint_save_path", type=str, default="./train.pth",
+                        help="Path where model checkpoint will be saved")
+    parser.add_argument("--results_path", type=str, default="./results.csv",
+                        help="Path where results CSV will be written")
+    parser.add_argument("--cls_tensor", type=str,
+                        default="/home/projects/regre/shap/smiles_2_ccs/check3.pt",
+                        help="Path to the class tensor (.pt file)")
+    parser.add_argument("--device", type=str, default="cuda:1",
+                        help="Device to use (e.g., 'cuda:0', 'cpu')")
+
+    args = parser.parse_args()
+
+    device = torch.device(args.device)
     print(f"Using device: {device}")
+
     torch.manual_seed(42)
     np.random.seed(42)
-    torch.cuda.manual_seed_all(42)
- 
+    if device.type == "cuda":
+        torch.cuda.manual_seed_all(42)
+
     main(
-        csv_path="./data/METLIN_CCS_monomer.csv",
-        checkpoint_save_path="./train.pth",
-        cls_checkpoint="./data/CLS_repr.pt",  
+        csv_path=args.csv_path,
+        checkpoint_save_path=args.checkpoint_save_path,
+        results_path=args.results_path,
+        cls_tensor=args.cls_tensor,
         device=device
     )
