@@ -12,7 +12,7 @@ def canonicalize_smiles(smiles_list):
     
     return [canonicalize(smiles) for smiles in smiles_list]
 
-df = pd.read_csv('./METLIN_CCS_data.csv')
+df = pd.read_csv('./data/METLIN_CCS_monomer.csv')
 
 all_smiles = df["smiles"].tolist()
 
@@ -27,7 +27,7 @@ for mol_idx, arr in enumerate(M_CLS_repr['cls_repr']):
 
 CLS = pd.DataFrame(datas, columns=['CLS_repr'])
 
-#CLS.to_csv("./CLS.csv", index=False)
+CLS.to_csv("data/CLS_token_METLINCCS.csv", index=False)
 
  
 
