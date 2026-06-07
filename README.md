@@ -28,24 +28,24 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
     
 ## ⚡Reproduction 
 
-please  refer UEFCCS architecture
 1. finetune
 
-# Fine-tune the UniMol model to obtain updated weights
+#Fine-tune the UniMol model to obtain updated weights (ckpt)
 
    python ./data_prepare/finetune.py   
 
 2. generating the [CLS] token
 
-# Please reload the updated weights to the UniMol checkpoint before running this command
+#Please load the updated weights (ckpt) to the UniMol before running this command
+#The updated weights (checkpoint) refer to the .pth file with the best MSE achieved during 5-fold cross-validation
 
     python ./data_prepare/get_cls_token.py  
 
 3. training
 
-   https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
+   Alternatively, directly download the obtained cls_token saved as a .pt file, and the above two steps can be skipped. https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
  
-   python UEFCCS_train.py --csv_path train.csv --checkpoint_save_path ./train.pth --results_path ./results.csv --cls_tensor ./path_to_cls_token --device cuda:0
+   python UEFCCS_train.py  --csv_path /your_csv  --cls_tensor /your_path_to_cls_token
    
 
 ## 📖 Citation
