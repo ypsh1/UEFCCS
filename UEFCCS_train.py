@@ -30,13 +30,13 @@ def main(csv_path, checkpoint_save_path, results_path, cls_tensor=None, device=N
 
     elements = ["H", "Li", "B", "C", "N", "O", "F", "Na", "Si", "P", "S", "Cl", "K", "Se", "Br", "I"]
 
-    ion_repr, fp_features, fe_features, adduct_features, y = prepare_features4train(
+    cls_repr, fp_features, fe_features, adduct_features, y = prepare_features4train(
         df, elements, device, cls_tensor
     )
 
-    train_dataset = MultiFeatureDataset(train_indices, ion_repr, fp_features, fe_features, adduct_features, y)
-    val_dataset   = MultiFeatureDataset(val_indices,   ion_repr, fp_features, fe_features, adduct_features, y)
-    test_dataset  = MultiFeatureDataset(test_indices,  ion_repr, fp_features, fe_features, adduct_features, y)
+    train_dataset = MultiFeatureDataset(train_indices, cls_repr, fp_features, fe_features, adduct_features, y)
+    val_dataset   = MultiFeatureDataset(val_indices,   cls_repr, fp_features, fe_features, adduct_features, y)
+    test_dataset  = MultiFeatureDataset(test_indices,  cls_repr, fp_features, fe_features, adduct_features, y)
     
     batch_size = 128
     train_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -128,18 +128,17 @@ def main(csv_path, checkpoint_save_path, results_path, cls_tensor=None, device=N
     results.to_csv(results_path, index=False)   
 
 if __name__ == "__main__":
+    
     parser = argparse.ArgumentParser(description="Train/evaluate model with CCS data")
-    parser.add_argument("--csv_path", type=str,
-                        default="/home/projects/regre/shap/smiles_2_ccs/mlp5.csv",
+    parser.add_argument("--csv_path", type=str, required=True,
                         help="Path to the CSV file with SMILES and CCS values")
-    parser.add_argument("--checkpoint_save_path", type=str, default="./train.pth",
+    parser.add_argument("--checkpoint_save_path", type=str, default="./ckpt/weights.pth",
                         help="Path where model checkpoint will be saved")
     parser.add_argument("--results_path", type=str, default="./results.csv",
                         help="Path where results CSV will be written")
-    parser.add_argument("--cls_tensor", type=str,
-                        default="/home/projects/regre/shap/smiles_2_ccs/check3.pt",
-                        help="Path to the class tensor (.pt file)")
-    parser.add_argument("--device", type=str, default="cuda:1",
+    parser.add_argument("--cls_tensor", type=str, required=True,
+                        help="Path to the class tensor (.pt or .csv file)")
+    parser.add_argument("--device", type=str, default="cuda:0",
                         help="Device to use (e.g., 'cuda:0', 'cpu')")
 
     args = parser.parse_args()
