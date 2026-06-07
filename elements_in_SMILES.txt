@@ -1,0 +1,17 @@
+#Only the following elements are accepted
+H
+Li
+B
+C
+N
+O
+F
+Na
+Si
+P
+S
+Cl
+K
+Se
+Br
+I
