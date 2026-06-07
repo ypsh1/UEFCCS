@@ -5,15 +5,15 @@ import torch
 from torch.utils.data import DataLoader
 from features import prepare_features, MultiFeatureDataset, MLPRegressor, predict_and_evaluate
 
-def main(csv_path, results_csv_path, device, batch_size=128):
+def main(csv_path, results_csv_path, device, ckpt_path, batch_size=128):
     # Prepare features
-    ion_repr, fp_features, fe_features, adduct_features, y = prepare_features(csv_path, device)
+    cls_repr, fp_features, fe_features, adduct_features, y = prepare_features(csv_path, device)
 
     # DataLoader
     all_indices = np.arange(len(y))
     test_dataset = MultiFeatureDataset(
         indices=all_indices,
-        ion_repr=ion_repr,
+        cls_repr=cls_repr,
         fp_features=fp_features,
         fe_features=fe_features,
         adduct_features=adduct_features,
@@ -23,7 +23,7 @@ def main(csv_path, results_csv_path, device, batch_size=128):
 
     # Load pretrained model
     model = MLPRegressor().to(device)
-    checkpoint = torch.load("./ckpt/predict.pth", map_location=device)
+    checkpoint = torch.load(ckpt_path, map_location=device)
     model.load_state_dict(checkpoint['model_state_dict'])
 
     # Predict and evaluate
@@ -39,8 +39,9 @@ if __name__ == "__main__":
     parser.add_argument("--input_csv", type=str, required=True, help="Path to input CSV file")
     parser.add_argument("--output_csv", type=str, required=True, help="Path to save output predictions CSV")
     parser.add_argument("--device", type=str, default="cuda:0", help="Compute device (e.g., 'cuda:0', 'cpu')")
+    parser.add_argument("--ckpt", type=str, default="./ckpt/weights.pth", help="Path to weights file")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for DataLoader")
-    
+
     args = parser.parse_args()
     
     device = torch.device(args.device)
@@ -52,5 +53,4 @@ if __name__ == "__main__":
     torch.cuda.manual_seed_all(42)
     
     # Call main function
-    main(args.input_csv, args.output_csv, device, args.batch_size)
-   
+    main(args.input_csv, args.output_csv, device, args.ckpt, args.batch_size)
