@@ -32,7 +32,7 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
 
 #Fine-tune the UniMol model to obtain updated weights (ckpt)
 
-   python ./data_prepare/finetune.py   
+    python ./data_prepare/finetune.py   
 
 2. generating the [CLS] token
 
@@ -45,7 +45,7 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
 
    Alternatively, directly download the obtained cls_token saved as a .pt file, and the above two steps can be skipped. https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
  
-   python UEFCCS_train.py  --csv_path /your_csv  --cls_tensor /your_path_to_cls_token
+    python UEFCCS_train.py  --csv_path /your_csv  --cls_tensor /your_path_to_cls_token
    
 
 ## 📖 Citation
