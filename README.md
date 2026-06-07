@@ -22,7 +22,7 @@ Once uefccs is correctly installed, please check the location of uefccs
 
     pip show unimol_tools
 
-copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
+#copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
     
     python UEFCCS_predict.py --input_csv test.csv --output_csv predicts.csv
     
@@ -43,9 +43,8 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
 
 3. training
 
-   Alternatively, directly download the obtained cls_token saved as a .pt file, and the above two steps can be skipped. https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
+#Alternatively, directly download the obtained cls_token saved as a .pt file, and the above two steps can be skipped. https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
  
-
     python UEFCCS_train.py  --csv_path /your_csv  --cls_tensor /your_path_to_cls_token
    
 
