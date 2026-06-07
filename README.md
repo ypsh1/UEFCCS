@@ -31,11 +31,15 @@ copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf8
 please  refer UEFCCS architecture
 1. finetune
 
-   python ./data_prepare/finetune.py   #
+# Fine-tune the UniMol model to obtain updated weights
+
+   python ./data_prepare/finetune.py   
 
 2. generating the [CLS] token
 
-    python ./data_prepare/get_cls_token.py
+# Please reload the updated weights to the UniMol checkpoint before running this command
+
+    python ./data_prepare/get_cls_token.py  
 
 3. training
 
