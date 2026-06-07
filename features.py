@@ -2,17 +2,22 @@ import pandas as pd
 import numpy as np
 import torch
 import torch.nn as nn
-from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, median_absolute_error
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score, median_absolute_error 
 from rdkit import Chem
 from rdkit.Chem import AllChem
 from rdkit.Chem.rdMolDescriptors import CalcMolFormula
 import re
+import ast
+from pathlib import Path
 from unimol_tools import UniMolRepr
 from rdkit import RDLogger
 RDLogger.DisableLog('rdApp.warning')
 
 def remove_salts(mol):
-    """去除盐离子，保留分子中原子数最多的片段"""
+    """
+    Remove salt ions, keep the fragment with the largest number of atoms in the molecule
+    """
+    
     if mol is None:
         return None
     frags = Chem.GetMolFrags(mol, asMols=True, sanitizeFrags=True)
@@ -34,7 +39,10 @@ def smiles_2_formula(smiles):
         return ""
 
 def canonicalize_smiles(smi_list):
-    """将 SMILES 列表转换为规范化的 SMILES（异构信息保留）"""
+    """
+    Convert a list of SMILES to canonical SMILES (retaining stereochemical information)
+    """
+    
     def canonicalize(smiles):
         mol = Chem.MolFromSmiles(smiles)
         return Chem.MolToSmiles(mol, canonical=True, isomericSmiles=True) if mol else None
@@ -42,7 +50,11 @@ def canonicalize_smiles(smi_list):
 
 
 def formula_to_vector(formula, elements, adjust=None):
-    """将分子式转换为元素计数向量，可调整电荷对应的原子增减"""
+    """
+    Convert molecular formula to element count vector, 
+    with optional adjustment for atomic gains/losses corresponding to charge
+    """
+    
     tokens = re.findall(r"([A-Z][a-z]?)(\d*)", formula)
     counts = {elem: int(num) if num else 1 for elem, num in tokens}
     if adjust:
@@ -52,7 +64,9 @@ def formula_to_vector(formula, elements, adjust=None):
 
 
 def get_adjust_from_adduct(adduct):
-    """根据加合离子类型返回需要调整的元素及其数量"""
+    """
+    Return elements and their counts to be adjusted according to the adduct ion type
+    """    
     if adduct == "[M+H]":
         return {"H": 1}
     elif adduct == "[M-H]":
@@ -63,9 +77,9 @@ def get_adjust_from_adduct(adduct):
         return {}
 
 class MultiFeatureDataset:
-    def __init__(self, indices, ion_repr, fp_features, fe_features, adduct_features, y):
+    def __init__(self, indices, cls_repr, fp_features, fe_features, adduct_features, y):
         self.indices = indices
-        self.ion_repr = ion_repr
+        self.cls_repr = cls_repr
         self.fp_features = fp_features
         self.fe_features = fe_features
         self.adduct_features = adduct_features
@@ -77,7 +91,7 @@ class MultiFeatureDataset:
     def __getitem__(self, idx):
         i = self.indices[idx]
         return (
-            self.ion_repr[i],
+            self.cls_repr[i],
             self.fp_features[i],
             self.fe_features[i],
             self.adduct_features[i],
@@ -85,22 +99,27 @@ class MultiFeatureDataset:
         )
 
 def prepare_features(csv_path, device):
-    """读取CSV并生成所有特征张量，返回 (ion_repr, fp_features, fe_features, adduct_features, y)"""
+    """
+    Read CSV and generate all feature tensors, 
+    returns (cls_repr, fp_features, fe_features, adduct_features, y)
+    """
+    
     df = pd.read_csv(csv_path)
     df['Adduct'] = df['Adduct'].astype(str).str.strip()
     df = df[df['Adduct'].isin(['[M+H]', '[M+Na]', '[M-H]'])]
 
     smiles_list = canonicalize_smiles(df['smiles'].tolist())
 
-    # 计算分子式（仅当 CSV 中没有 'Formula' 列时才执行）
+    # Calculate molecular formula (only executed when there is no 'Formula' column in the CSV)
     if 'Formula' not in df.columns:
         formulas = []
         for smi in smiles_list:
             formulas.append(smiles_2_formula(smi))
         df['Formula'] = formulas
-
-    # 准备目标值
-    # 生成 Morgan 指纹 (2048 bits, radius=2)
+ 
+    # Prepare target values
+    # Generate Morgan fingerprint (2048 bits, radius=2)
+    
     fingerprints = []
     for smi in smiles_list:
         mol = Chem.MolFromSmiles(smi)
@@ -116,7 +135,7 @@ def prepare_features(csv_path, device):
         fingerprints.append(fp_int_list)
     print(f"Number of fingerprints: {len(fingerprints)}")
 
-    # 生成元素计数向量（考虑加合离子）
+    # Generating element count vector (considering adduct ions)
     elements = ["H", "Li", "B", "C", "N", "O", "F", "Na", "Si", "P", "S", "Cl", "K", "Se", "Br", "I"]
     rows = []
     for idx, row in df.iterrows():
@@ -126,17 +145,17 @@ def prepare_features(csv_path, device):
         vector = formula_to_vector(formula, elements, adjust)
         rows.append(vector)
 
-    # 获取 UniMol 表征 (CLS token)
+    # generating UniMol representation (CLS token)
     clf = UniMolRepr(data_type='molecule', model_name='unimolv1', remove_hs=False)
     M_CLS_repr = clf.get_repr(smiles_list, return_atomic_reprs=False)
     cls = [arr.tolist() for arr in M_CLS_repr['cls_repr']]
 
-    # 加合离子编码映射
+    # Adduct ion encoding mapping
     mapping = {"[M+H]": 32, "[M+Na]": 155, "[M-H]": -32}
     Adduct_lst = df["Adduct"].map(mapping).tolist()
     print(f"Adduct list length: {len(Adduct_lst)}")
 
-    # y值
+    # y values
 
     if 'CCS' not in df.columns:
         CCS = np.full(len(smiles_list), np.nan, dtype=np.float64)
@@ -145,14 +164,15 @@ def prepare_features(csv_path, device):
         targets = df['CCS'].tolist()
         
 
-    # 转换为 PyTorch 张量
-    ion_repr = torch.FloatTensor(np.array(cls)).to(device)           # (N, 512)
+    # Convert to PyTorch tensor
+    cls_repr = torch.FloatTensor(np.array(cls)).to(device)           # (N, 512)
+    
     fp_features = torch.FloatTensor(np.array(fingerprints)).to(device)  # (N, 2048)
     fe_features = torch.FloatTensor(np.array(rows)).to(device)      # (N, len(elements))
     adduct_features = torch.FloatTensor(np.array(Adduct_lst).reshape(-1, 1)).to(device)  # (N, 1)
     y = torch.FloatTensor(np.array(targets)).to(device)        # (N,)
 
-    return ion_repr, fp_features, fe_features, adduct_features, y
+    return cls_repr, fp_features, fe_features, adduct_features, y
 
 class MLPRegressor(nn.Module):
     def __init__(self, ion_dim=513, fp_dim=2048, fe_dim=16, hidden_dim=512, output_dim=1):
@@ -182,15 +202,19 @@ class MLPRegressor(nn.Module):
         return output
 
 def predict_and_evaluate(model, test_loader, device, csv_path):
-    """对测试集进行预测并计算评估指标，返回 (test_preds, test_targets, metrics_dict)
-    
-    Args:
-        model: 训练好的模型
-        test_loader: 测试数据加载器（仍然返回 batch_y，但若无CCS列则忽略）
-        device: 计算设备
-        csv_path: 测试数据的CSV文件路径（用于检查是否存在 'CCS' 列）
+ 
     """
-    # 读取CSV，检查是否存在 'CCS' 列
+       Make predictions on the test set and compute evaluation metrics, returns (test_preds, test_targets, metrics_dict)
+
+       Args:
+       model: trained model
+       test_loader: test data loader (still returns batch_y, but ignored if there is no CCS column)
+       device: computation device
+       csv_path: CSV file path of the test data (used to check whether the 'CCS' column exists)
+    """
+    
+    # Read CSV and check whether the 'CCS' column exists
+    
     test_df = pd.read_csv(csv_path)
     has_ccs = 'CCS' in test_df.columns
 
@@ -210,14 +234,15 @@ def predict_and_evaluate(model, test_loader, device, csv_path):
             if has_ccs:
                 test_targets.extend(batch_y.cpu().numpy())
             else:
-                # 没有CCS列时，用None填充（长度与batch一致）
+                # When there is no CCS column, fill with None (length consistent with batch)
+                
                 test_targets.extend([None] * len(batch_y))
 
     test_preds = np.array(test_preds)
 
     if has_ccs:
         test_targets = np.array(test_targets)
-        # 计算评估指标
+        
         mse = mean_squared_error(test_targets, test_preds)
         mae = mean_absolute_error(test_targets, test_preds)
         r2 = r2_score(test_targets, test_preds)
@@ -237,7 +262,8 @@ def predict_and_evaluate(model, test_loader, device, csv_path):
         for name, value in metrics.items():
             print(f"{name}: {value:.4f}")
     else:
-        # 没有真实标签：test_targets 全为 None，所有指标值为 "not applicable"
+        # No ground truth labels: test_targets are all None, all metric values are "not applicable"
+        
         test_targets = np.array([None] * len(test_preds))
         metrics = {
             'MSE': "not applicable",
@@ -251,22 +277,23 @@ def predict_and_evaluate(model, test_loader, device, csv_path):
     return test_preds, test_targets, metrics
 
 
-# ==================== 新增函数：专用于训练的特征准备 ====================
-def prepare_features4train(df, elements, device, unirepr_checkpoint=None):
+ def prepare_features4train(df, elements, device, cls_tensor=None):
     """
-    从 DataFrame 中提取所有特征，返回张量。
-    参数:
-        df: pandas DataFrame，必须包含列 'smiles', 'Adduct', 'CCS_AVG', 'Molecular Formula'
-        elements: 元素列表
-        device: torch device
-        unirepr_checkpoint: 可选，预计算的 UniMol 表征 checkpoint 路径。若为 None，则动态计算
-    返回:
-        ion_repr, fp_features, vec_features, adduct_features, y
+       Extract all features from the DataFrame and return tensors.
+
+       Parameters:
+       df: pandas DataFrame, must contain columns 'smiles', 'Adduct', 'CCS_AVG', 'Molecular Formula'
+       elements: list of elements
+       device: torch device
+       unirepr_checkpoint: optional, precomputed UniMol representation checkpoint path. If None, dynamically compute
+
+       Returns:
+       cls_repr, fp_features, vec_features, adduct_features, y
     """
-    # 1. 规范化 SMILES
+    #  canonicalize smiles
     smiles_list = canonicalize_smiles(df['smiles'].tolist())
 
-    # 2. Morgan 指纹
+    # ECFP fingerprints
     fingerprints = []
     for smi in smiles_list:
         mol = Chem.MolFromSmiles(smi)
@@ -281,7 +308,7 @@ def prepare_features4train(df, elements, device, unirepr_checkpoint=None):
         fingerprints.append(fp_int_list)
     fp_features = torch.FloatTensor(np.array(fingerprints)).to(device)
 
-    # 3. 元素计数向量（考虑加合离子调整）
+    # elements counting
     rows = []
     for idx, row in df.iterrows():
         formula = row['Molecular Formula']
@@ -289,27 +316,36 @@ def prepare_features4train(df, elements, device, unirepr_checkpoint=None):
         adjust = get_adjust_from_adduct(adduct)
         vector = formula_to_vector(formula, elements, adjust)
         rows.append(vector)
-    vec_features = torch.FloatTensor(np.array(rows)).to(device)
+    fe_features = torch.FloatTensor(np.array(rows)).to(device)
 
-    # 4. 加合离子编码（标量映射）
+    # mapping adduct types
     mapping = {"[M+H]": 32, "[M+Na]": 155, "[M-H]": -32}
     adduct_vals = df["Adduct"].map(mapping).values.reshape(-1, 1)
     adduct_features = torch.FloatTensor(adduct_vals).to(device)
+ 
+    path = Path(cls_tensor)
+    suffix = path.suffix.lower()
+    
+    if suffix in ['.pt', '.pth', '.ckpt']:
+        # PyTorch checkpoint fashion
+        checkpoint = torch.load(cls_tensor, map_location=device)
+        cls_repr = checkpoint["cls_repr"].to(device)
+        print(f"Loaded cls_repr from checkpoint: shape {cls_repr.shape}")
+        
+    elif suffix == '.csv':
+        # CSV fashion
+        cls = pd.read_csv(cls_tensor)
 
-    # 5. UniMol 表征
-    if unirepr_checkpoint is not None:
-        checkpoint = torch.load(unirepr_checkpoint, map_location=device)
-        ion_repr = checkpoint["cls_repr"].to(device)
-        # 确保行数匹配
-        assert ion_repr.shape[0] == len(df), "UniRepr checkpoint row count mismatch"
+        str_vectors = cls['CLS_repr'].tolist()
+       
+        vectors = [ast.literal_eval(vec_str) for vec_str in str_vectors]
+        cls_repr = torch.FloatTensor(np.array(vectors)).to(device)
+        print(f"Loaded cls_repr from CSV: shape {cls_repr.shape}")
+        
     else:
-        clf = UniMolRepr(data_type='molecule', model_name='unimolv1', remove_hs=False)
-        M_CLS_repr = clf.get_repr(smiles_list, return_atomic_reprs=False)
-        cls = np.array([arr.tolist() for arr in M_CLS_repr['cls_repr']])
-        ion_repr = torch.FloatTensor(cls).to(device)
-
-    # 6. 目标值
+        raise ValueError(f"Unsupported file type: {suffix}. Expected .pt/.pth/.ckpt or .csv")
+    
     y = torch.FloatTensor(df['CCS_AVG'].values).to(device)
 
-    return ion_repr, fp_features, vec_features, adduct_features, y
+    return cls_repr, fp_features, fe_features, adduct_features, y
 
