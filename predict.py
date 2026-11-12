@@ -40,7 +40,7 @@ if __name__ == "__main__":
     parser.add_argument("--output_csv", type=str, required=True, help="Path to save output predictions CSV")
     parser.add_argument("--device", type=str, default="cuda:0", help="Compute device (e.g., 'cuda:0', 'cpu')")
     parser.add_argument("--ckpt", type=str, default="./ckpt/weights.pth", help="Path to weights file")
-    parser.add_argument("--ft_path", type=str, default="./funetune_unimol/model_2.pth", help="Path to fine-tuned unimol weights file")
+    parser.add_argument("--ft_path", type=str, default="./finetune_unimol/model_2.pth", help="Path to fine-tuned unimol weights file")
     parser.add_argument("--batch_size", type=int, default=128, help="Batch size for DataLoader")
 
     args = parser.parse_args()
