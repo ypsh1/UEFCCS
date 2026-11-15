@@ -16,38 +16,203 @@ Create new Conda environment using environment.yml.
 
     git clone https://github.com/ypsh1/UEFCCS.git
     cd uefccs
-    
+
+## 📦 Set up the environment
+
+The original README specifies Python 3.10, PyTorch 2.9.1, and CUDA 12.8. The scripts import NumPy, pandas, scikit-learn, RDKit, and `unimol_tools` in addition to PyTorch.
+
+```bash
+conda create -n uefccs python=3.10
+conda activate uefccs
+```
+
+`predict.py` and `train.py` default to `--device cuda:0`; use `--device cpu` for their tensors and MLP when CUDA is unavailable.
+
+## 📁 Data and model weights
+
+CSV column names are case-sensitive:
+
+| Script | Required columns | Optional columns |
+| --- | --- | --- |
+| `finetune.py` | `smiles`, `Adduct`, `CCS_AVG` | — |
+| `extract_CLS_token.py` | `smiles` | - |
+| `train.py` | `smiles`, `Adduct`, `CCS_AVG` | - |
+| `predict.py` | `smiles`, `Adduct` | `CCS` enables evaluation |
+
+Use valid, nonempty SMILES and numeric CCS labels when labels are provided. `CCS_AVG` is the training target; prediction evaluation reads `CCS`.
+
+For prediction, the supported adducts are `[M+H]`, `[M+Na]`, `[M-H]`, and `[M+K]`. Their charged forms (`[M+H]+`, `[M+Na]+`, `[M-H]-`, and `[M+K]+`) are normalized automatically. Rows with other adducts are excluded. Fine-tuning selects only rows whose `Adduct` is exactly `[M+H]`.    
+
+Prediction requires two weight files:
+
+| Weight file | Default path | Purpose |
+| --- | --- | --- |
+| UEFCCS regressor checkpoint | `./ckpt/weights.pth` | Loaded by `predict.py --ckpt`; must contain `model_state_dict` |
+| Fine-tuned Uni-Mol checkpoint | `./finetune_unimol/model_2.pth` | Loaded by `predict.py --ft_path` to generate [CLS] representations |
+
+Use the file actually saved by your Uni-Mol run. Prediction should use the same Uni-Mol weights used to generate the regressor's training features.
+
 ## 🎯 Prediction
-Once uefccs is correctly installed, please check the location of uefccs
 
-    pip show unimol_tools
+```bash
+python predict.py \
+    --input_csv <input.csv> \
+    --output_csv <predictions.csv> \
+    --ckpt <uefccs_checkpoint.pth> \
+    --ft_path <unimol_checkpoint.pth> \
+    --device <device> \
+    --batch_size <batch_size>
+```
 
-#copy the fine-tuned weights form https://drive.google.com/file/d/1ja3TR2ltQBPxf87CPUa1-vAyNesIpIvg/view?usp=drive_link to the subdir "uefccs/lib/python3.10/site-packages/unimol_tools/weights/"
-    
-    python UEFCCS_predict.py --input_csv test.csv --output_csv predicts.csv
-    
-## ⚡Reproduction 
+e.g. using the default weight paths, device, and batch size:
 
-1. finetune
+```bash
+python predict.py --input_csv ./data/test.csv --output_csv ./predicts.csv
+```
 
-#Fine-tune the UniMol model to obtain updated weights (ckpt)
+## ⚡ Reproduction
 
-    python ./data_prepare/finetune.py   
+For evaluation on an independent test set, prepare separate training and test CSV files first, and fine-tune Uni-Mol using only the training CSV.
 
-2. generating the [CLS] token
+### 1. Fine-tune Uni-Mol
 
-#Please load the updated weights (ckpt) to the UniMol before running this command
-#The updated weights (checkpoint) refer to the .pth file with the best MSE achieved during 5-fold cross-validation
+Fine-tune Uni-Mol V1 on CCS values for the `[M+H]` subset. The script removes salts, canonicalizes SMILES, and excludes unparseable SMILES from the fine-tuning pairs.
 
-    python ./data_prepare/get_cls_token.py  
+General usage:
 
-3. training
+```bash
+python finetune.py \
+    --csv <training.csv> \
+    --save_path <unimol_output_directory> \
+    --epochs <epochs> \
+    --lr <learning_rate> \
+    --batch_size <batch_size> \
+    --early_stopping <patience>
+```
 
-#Alternatively, directly download the obtained cls_token saved as a .pt file, and the above two steps can be skipped. https://drive.google.com/file/d/1MvmNKxmCnGSBV69csZx7MPxf1hVN2od2/view?usp=sharing
- 
-    python UEFCCS_train.py  --csv_path /your_csv  --cls_tensor /your_path_to_cls_token
+e.g.:
+
+```bash
+python finetune.py \
+    --csv ./data/METLIN_CCS_monomer_train.csv \
+    --save_path ./finetune_unimol \
+    --epochs 50 \
+    --lr 1e-4 \
+    --batch_size 64 \
+    --early_stopping 10
+```
+
+All arguments above are optional; the example shows their defaults, so `python finetune.py` runs with the same settings.
+
+### 2. Export [CLS] representations
+
+Extract [CLS] representations using the fine-tuned Uni-Mol weights. Each saved file contains `{"cls_repr": tensor}` with shape `(N, 512)`. With `--split false`, rows follow the input CSV order.
+
+General usage:
+
+```bash
+python extract_CLS_token.py \
+    --csv <input.csv> \
+    --UMpt_path <unimol_checkpoint.pth> \
+    --split <true_or_false> \
+    --out_pt <output.pt> \
+    --test_size <test_fraction> \
+    --seed <random_seed>
+```
+
+e.g. exporting representations for one CSV without splitting:
+
+```bash
+python extract_CLS_token.py \
+    --csv ./data/METLIN_CCS_monomer_train.csv \
+    --UMpt_path ./finetune_unimol/model_2.pth \
+    --split false \
+    --out_pt ./data/CLS_train.pt
+```
+
+| Argument | Default | Description |
+| --- | --- | --- |
+| `--csv` | Required | CSV containing a `smiles` column |
+| `--UMpt_path` | Required | Fine-tuned Uni-Mol checkpoint |
+| `--split` | `false` | Save one file, or randomly split representations into train/test files |
+| `--out_pt` | `./data/CLS.pt` | Output path, or base name when splitting |
+| `--test_size` | `0.2` | Test fraction when splitting |
+| `--seed` | `42` | Random seed for splitting |
+
+With `--split true --out_pt ./data/CLS.pt`, the script saves `./data/CLS_train.pt` and `./data/CLS_test.pt` instead of `./data/CLS.pt`. It does not export the corresponding CSV subsets. Separately prepared train/test CSV files need their own extraction runs with `--split false` to preserve row alignment.
+
+### 3. Train the UEFCCS regressor
+
+**Current interface limitation:** `train.py` describes `--cls_tensor`, `--train_cls_tensor`, and `--test_cls_tensor` as paths to precomputed representations. 
+
+
+#### Separate training and test CSV files (`pre_split`)
+
+The training CSV is split into training/validation subsets (90%/10%, `random_state=42`); the test CSV is reserved for final evaluation. Use the same Uni-Mol checkpoint for both feature sets.
+
+General usage:
+
+```bash
+python train.py \
+    --data_mode pre_split \
+    --train_csv_path <training.csv> \
+    --test_csv_path <test.csv> \
+    --train_cls_tensor <unimol_checkpoint.pth> \
+    --test_cls_tensor <unimol_checkpoint.pth> \
+    --checkpoint_save_path <uefccs_checkpoint.pth> \
+    --results_path <test_predictions.csv> \
+    --device <device>
+```
+
+e.g.:
+
+```bash
+python train.py \
+    --data_mode pre_split \
+    --train_csv_path ./data/METLIN_CCS_monomer_train.csv \
+    --test_csv_path ./data/METLIN_CCS_monomer_test.csv \
+    --train_cls_tensor ./finetune_unimol/model_2.pth \
+    --test_cls_tensor ./finetune_unimol/model_2.pth \
+    --checkpoint_save_path ./ckpt/weights.pth \
+    --results_path ./results.csv \
+    --device cuda:0
+```
+
+#### One CSV with an internal split (`split`)
+
+This mode splits the CSV into approximately 72% training, 8% validation, and 20% test data, using `random_state=42` for both splits.
+
+General usage:
+
+```bash
+python train.py \
+    --data_mode split \
+    --csv_path <input.csv> \
+    --cls_tensor <unimol_checkpoint.pth> \
+    --checkpoint_save_path <uefccs_checkpoint.pth> \
+    --results_path <test_predictions.csv> \
+    --device <device>
+```
+
+e.g.:
+
+```bash
+python train.py \
+    --data_mode split \
+    --csv_path ./data/METLIN_CCS_monomer.csv \
+    --cls_tensor ./finetune_unimol/model_2.pth \
+    --checkpoint_save_path ./ckpt/weights.pth \
+    --results_path ./check/model.csv \
+    --device cuda:0
+```
+
+`--data_mode` defaults to `split`, `--checkpoint_save_path` to `./ckpt/weights.pth`, `--results_path` to `./results.csv`, and `--device` to `cuda:0`. The CSV and feature-checkpoint arguments for the selected mode are required.
+
+Training uses a batch size of 128, Huber loss, Adam (`lr=1e-4`, `weight_decay=0.01`), up to 500 epochs, and early stopping after 15 epochs without validation-loss improvement. These settings are defined inside `train.py` and are not command-line arguments.
+
+Training saves a checkpoint containing `model_state_dict` and a test-results CSV containing `preds` and `targets`. The script prints MSE, MAE, R², median absolute error, and median relative error. Relative error is reported as a fraction.
+
    
-
 ## 📖 Citation
 
 If you use this code, please cite:
