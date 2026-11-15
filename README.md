@@ -3,15 +3,6 @@ UEFCCS was developed for collision cross section (CCS) prediction
 
 <img src="./images/ToC_.png" alt="Logo" width="600">
 
-## 📦 Setting up Conda environment
-
-UEFCCS was written in python (3.10) and used pytorch (2.9.1) with CUDA (12.8). 
-
-Create new Conda environment using environment.yml.  
-
-    conda env create -f environment.yml
-    conda activate uefccs
-
 ## 📁 Git clone repository
 
     git clone https://github.com/ypsh1/UEFCCS.git
@@ -22,7 +13,7 @@ Create new Conda environment using environment.yml.
 The original README specifies Python 3.10, PyTorch 2.9.1, and CUDA 12.8. The scripts import NumPy, pandas, scikit-learn, RDKit, and `unimol_tools` in addition to PyTorch.
 
 ```bash
-conda create -n uefccs python=3.10
+conda env create -f environment.yml
 conda activate uefccs
 ```
 
