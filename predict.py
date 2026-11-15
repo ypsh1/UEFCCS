@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import torch
 from torch.utils.data import DataLoader
-from features4 import prepare_features, MultiFeatureDataset, MLPRegressor, predict_and_evaluate
+from features_extraction import prepare_features, MultiFeatureDataset, MLPRegressor, predict_and_evaluate
 
 def main(csv_path, results_csv_path, device, ckpt_path, ft_path, batch_size=128):
     # Prepare features
