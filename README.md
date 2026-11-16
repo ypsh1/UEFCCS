@@ -32,6 +32,38 @@ CSV column names are case-sensitive:
 
 Use valid, nonempty SMILES and numeric CCS labels when labels are provided. `CCS_AVG` is the training target; prediction evaluation reads `CCS`.
 
+### Download precomputed [CLS] representations
+
+Precomputed [CLS] representation files are also available on Hugging Face:
+
+| File | Local path | Description |
+| --- | --- | --- |
+| [CLS.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS.pt) | `./data/CLS.pt` | Representations for the full dataset |
+| [CLS_train.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_train.pt) | `./data/CLS_train.pt` | Representations for the training subset |
+| [CLS_test.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_test.pt) | `./data/CLS_test.pt` | Representations for the test subset |
+
+General usage:
+
+```bash
+curl -fL "<cls_download_url>" -o <local_cls_path>
+```
+
+e.g. from the repository root:
+
+```bash
+
+curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS.pt" \
+    -o ./data/CLS.pt
+
+curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_train.pt" \
+    -o ./data/CLS_train.pt
+
+curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_test.pt" \
+    -o ./data/CLS_test.pt
+```
+
+Use each representation file with its corresponding CSV, preserving the exact row order. See the [current training interface limitation](#3-train-the-uefccs-regressor) before using these files with `train.py`.
+
 For prediction, the supported adducts are `[M+H]`, `[M+Na]`, `[M-H]`, and `[M+K]`. Their charged forms (`[M+H]+`, `[M+Na]+`, `[M-H]-`, and `[M+K]+`) are normalized automatically. Rows with other adducts are excluded. Fine-tuning selects only rows whose `Adduct` is exactly `[M+H]`.    
 
 Prediction requires two weight files:
