@@ -10,14 +10,14 @@ UEFCCS was developed for collision cross section (CCS) prediction
 
 ## 📦 Set up the environment
 
-The original README specifies Python 3.10, PyTorch 2.9.1, and CUDA 12.8. The scripts import NumPy, pandas, scikit-learn, RDKit, and `unimol_tools` in addition to PyTorch.
+UEFCCS uses Python 3.10, PyTorch 2.9.1, and CUDA 12.8. Create the Conda environment using `environment.yml`:
 
 ```bash
 conda env create -f environment.yml
 conda activate uefccs
 ```
 
-`predict.py` and `train.py` default to `--device cuda:0`; use `--device cpu` for their tensors and MLP when CUDA is unavailable.
+`predict.py` and `train.py` default to `--device cuda:0`; use `--device cpu` for their tensors and MLP when CUDA is unavailable. 
 
 ## 📁 Data and model weights
 
@@ -31,38 +31,6 @@ CSV column names are case-sensitive:
 | `predict.py` | `smiles`, `Adduct` | `CCS`: reference values used to evaluate predicted CCS |
 
 Use valid, nonempty SMILES and numeric CCS labels when labels are provided. `CCS_AVG` is the training target; prediction evaluation reads `CCS`.
-
-### Download precomputed [CLS] representations
-
-Precomputed [CLS] representation files are also available on Hugging Face:
-
-| File | Local path | Description |
-| --- | --- | --- |
-| [CLS.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS.pt) | `./data/CLS.pt` | Representations for the full dataset |
-| [CLS_train.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_train.pt) | `./data/CLS_train.pt` | Representations for the training subset |
-| [CLS_test.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_test.pt) | `./data/CLS_test.pt` | Representations for the test subset |
-
-General usage:
-
-```bash
-curl -fL "<cls_download_url>" -o <local_cls_path>
-```
-
-e.g. from the repository root:
-
-```bash
-
-curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS.pt" \
-    -o ./data/CLS.pt
-
-curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_train.pt" \
-    -o ./data/CLS_train.pt
-
-curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_test.pt" \
-    -o ./data/CLS_test.pt
-```
-
-Use each representation file with its corresponding CSV, preserving the exact row order. See the [current training interface limitation](#3-train-the-uefccs-regressor) before using these files with `train.py`.
 
 For prediction, the supported adducts are `[M+H]`, `[M+Na]`, `[M-H]`, and `[M+K]`. Their charged forms (`[M+H]+`, `[M+Na]+`, `[M-H]-`, and `[M+K]+`) are normalized automatically. Rows with other adducts are excluded. Fine-tuning selects only rows whose `Adduct` is exactly `[M+H]`.    
 
@@ -80,10 +48,6 @@ The pretrained weights are available in the [UEFCCS model repository on Hugging 
 General usage:
 
 ```bash
-curl -fL "<weight_download_url>" -o <local_checkpoint_path>
-```
-
-e.g. from the repository root:
 
 curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/weights.pth" \
     -o ./ckpt/weights.pth
@@ -92,7 +56,32 @@ curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/model_2.pth" \
     -o ./finetune_unimol/model_2.pth
 ```
 
-Use the file actually saved by your Uni-Mol run. Prediction should use the same Uni-Mol weights used to generate the regressor's training features.
+### Download precomputed [CLS] representations (if needed)
+
+Precomputed [CLS] representation files are also available on Hugging Face:
+
+| File | Local path | Description |
+| --- | --- | --- |
+| [CLS.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS.pt) | `./data/CLS.pt` | Representations for the full dataset |
+| [CLS_train.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_train.pt) | `./data/CLS_train.pt` | Representations for the training subset |
+| [CLS_test.pt](https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_test.pt) | `./data/CLS_test.pt` | Representations for the test subset |
+
+General usage:
+
+```bash
+
+curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS.pt" \
+    -o ./data/CLS.pt
+
+curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_train.pt" \
+    -o ./data/CLS_train.pt
+
+curl -fL "https://huggingface.co/ypsh1/UEFCCS/resolve/main/CLS_test.pt" \
+    -o ./data/CLS_test.pt
+```
+
+Use each representation file with its corresponding CSV, preserving the exact row order. See the [current training interface limitation](#3-train-the-uefccs-regressor) before using these files with `train.py`.
+
 
 ## 🎯 Prediction
 
@@ -246,7 +235,7 @@ e.g.:
 python train.py \
     --data_mode split \
     --csv_path ./data/METLIN_CCS_monomer.csv \
-    --cls_tensor `./data/CLS.pt` \
+    --cls_tensor ./data/CLS.pt \
     --checkpoint_save_path ./ckpt/weights.pth \
     --results_path ./results.csv \
     --device cuda:0
