@@ -103,9 +103,9 @@ python predict.py --input_csv ./data/test.csv --output_csv ./results.csv
 
 ## ⚡ Reproduction
 
-For evaluation on an independent test set, prepare separate training and test CSV files first, and fine-tune Uni-Mol using only the training CSV.
+For evaluation on an independent dataset, prepare separate training and test CSV files first, and fine-tune Uni-Mol using only the training CSV.
 
-In ccs_data, `METLIN_CCS_monomer_train.csv` and `METLIN_CCS_monomer_test.csv` were generated using `train_test_split(df, test_size=0.2, random_state=42, shuffle=True)` #
+In 'data', `METLIN_CCS_monomer_train.csv` and `METLIN_CCS_monomer_test.csv` were generated using `train_test_split(df, test_size=0.2, random_state=42, shuffle=True)` #
  df refers to METLIN_CCS_monomer.csv
  
 ### 1. Fine-tune Uni-Mol
